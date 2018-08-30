@@ -17,9 +17,10 @@ require some methods and properties to be defined and reward you with
 some context built at an appropriate time.
 
 The required functions/params include:
-	- final_state (String)
-	- is_valid (Function returning Boolean)
-	- context (Function returning Dict)
+
+- final_state (String)
+- is_valid (Function returning Boolean)
+- context (Function returning Dict)
 
 ```
 
