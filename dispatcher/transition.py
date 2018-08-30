@@ -2,9 +2,14 @@
 class Transition:
 
     errors = []
+    chain = None
 
-    def __init__(self, resources):
-        self.resources = resources
+    def __init__(self, chain):
+        self.chain = chain
+        self.resources = dict([
+            (rsc.resource_type, rsc.resource_id)
+            for rsc in chain.chain_resources.all()
+        ])
 
     def __repr__(self):
         return '<{}: {}>'.format(

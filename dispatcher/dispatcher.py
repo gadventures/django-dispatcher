@@ -29,6 +29,15 @@ class Dispatcher:
             if getattr(self, key, None) is None:
                 raise ValueError('{} is required for the chain config')
 
+    def log_event(self, action, value):
+        from .models import MessageChainEvent
+        event_log = MessageChainEvent(**{
+            'chain': self.chain,
+            'action': action,
+            'value': value
+        })
+        event_log.save()
+
     def get_or_create_chain(self, resource_mappings):
         """
         Args:
@@ -74,12 +83,12 @@ class Dispatcher:
                 chain_rsc = MessageChainResource(chain=self.chain, **rsc_dict)
                 chain_rsc.save()
 
+        return self
+
     def find_transition(self):
         errors = []
         for transition in self.transitions[self.chain.state]:
-            transition = transition(
-                resources=self.chain.chain_resources.all()
-            )
+            transition = transition(chain=self.chain)
             if transition.is_valid():
                 transition.context = transition.build_context()
                 return transition
@@ -100,19 +109,22 @@ class Dispatcher:
             data=json.dumps(transition.context)
         )
 
-    def execute_chain(self, dry_run=False, callback=None, **callback_kwargs):
+    def execute_chain(self, dry_run=False, callback=None, callback_kwargs=None, **kwargs):
 
         try:
             transition = self.find_transition()
-        except ValueError as e:
+        except Exception as e:
             logger.warning(e)
             return False
+        else:
+            transition = self.find_transition()
 
         try:
             if dry_run:
                 pass
             elif callback:
-                callback(transition, **callback_kwargs)
+                cb_kwargs = callback_kwargs or {}
+                callback(transition, **cb_kwargs)
             elif self.API_OPTS:
                 self.send_api_request(transition)
             else:
@@ -124,3 +136,7 @@ class Dispatcher:
             if not dry_run:
                 self.chain.state = transition.final_state
                 self.chain.save()
+                self.log_event(
+                    action='state_transition',
+                    value=self.chain.state
+                )
