@@ -33,17 +33,7 @@ class Cart2DayReminder(Transition):
 
     @property
     def onlinebooking(self):
-        if self._onlinebooking is None:
-            self._onlinebooking = OnlineBooking.objects.get(pk=self.resources['online_booking'])
-        return self._onlinebooking
-    _onlinebooking = None
-
-    @property
-    def profile(self):
-        if self._profile is None:
-            self._profile = self.onlinebooking.user and self.onlinebooking.user.profile
-        return self._profile
-    _profile = None
+		return OnlineBooking.objects.get(pk=self.resources['online_booking'])
 
     def is_valid(self):
 
@@ -55,8 +45,7 @@ class Cart2DayReminder(Transition):
 
     def build_context(self):
         return {
-            'booking_id': self.onlinebooking.id,
-            'email_to': self.profile.email,
+            'booking': self.onlinebooking.to_dict(),
         }
 
 
@@ -66,7 +55,7 @@ class Cart1WeekReminder(Transition):
 
 ```
 
-2. Create a config, listing the transitions that can happen
+2. Create a config, listing the transitions that can happen. When a chain state is found, it can transition to the listed transitions. After that is done, the chain moves to a new state. The next time this runs, it'll find the new state and try to transition to the new transitions.
 
 ```
 DISPATCHER_CONFIG = {
