@@ -22,7 +22,7 @@ The required functions/params include:
 - is_valid (Function returning Boolean)
 - context (Function returning Dict)
 
-```
+```python
 
 from dispatcher import Transition
 
@@ -57,7 +57,7 @@ class Cart1WeekReminder(Transition):
 
 2. Create a config, listing the transitions that can happen. When a chain state is found, it can transition to the listed transitions. After that is done, the chain moves to a new state. The next time this runs, it'll find the new state and try to transition to the new transitions.
 
-```
+```python
 DISPATCHER_CONFIG = {
 	'chains': [
 		{
@@ -80,7 +80,7 @@ the above config. We include the `requests_by` to keep track of where
 the request originates from.
 
 
-```
+```python
 
 from dispatcher import Dispatcher
 
@@ -96,7 +96,7 @@ dispatcher = Dispatcher(
 will query using an `AND` statement, meaning all the resources must
 be present when retrieving the chain.
 
-```
+```python
 
 dispatcher.get_or_create_chain([
 	('online_booking', '123456'),
@@ -109,9 +109,9 @@ dispatcher.get_or_create_chain([
 valid state, whatever callback you pass will be sent on. The callback
 takes the transition passed in and any callback arguments specified.
 
-```
+```python
 
-def some_callback(transition, \**callback_args):
+def some_callback(transition, **callback_args):
 	# so something magical
 
 
