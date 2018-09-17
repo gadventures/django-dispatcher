@@ -33,7 +33,7 @@ class Cart2DayReminder(Transition):
 
     @property
     def onlinebooking(self):
-		return OnlineBooking.objects.get(pk=self.resources['online_booking'])
+        return OnlineBooking.objects.get(pk=self.resources['online_booking'])
 
     def is_valid(self):
 
@@ -50,7 +50,7 @@ class Cart2DayReminder(Transition):
 
 
 class Cart1WeekReminder(Transition):
-	...
+    ...
 
 
 ```
@@ -59,16 +59,16 @@ class Cart1WeekReminder(Transition):
 
 ```python
 DISPATCHER_CONFIG = {
-	'chains': [
-		{
-			'chain_type': 'abandoned_cart',
-			'transitions': {
-				NEW: [Cart2DayReminder, Cart1WeekReminder],
-				Cart2DayReminder.final_state: [Cart1WeekReminder, ],
-				Cart1WeekReminder.final_state: [],
-			}
-		}
-	]
+    'chains': [
+        {
+            'chain_type': 'abandoned_cart',
+            'transitions': {
+                NEW: [Cart2DayReminder, Cart1WeekReminder],
+                Cart2DayReminder.final_state: [Cart1WeekReminder, ],
+                Cart1WeekReminder.final_state: [],
+            }
+        }
+    ]
 }
 
 ```
@@ -85,9 +85,9 @@ the request originates from.
 from dispatcher import Dispatcher
 
 dispatcher = Dispatcher(
-	chain_type='abandoned_cart',
-	chain_configs=DISPATCHER_CONFIG,
-	requests_by='cart_abandonment_scripts'
+    chain_type='abandoned_cart',
+    chain_configs=DISPATCHER_CONFIG,
+    requests_by='cart_abandonment_scripts'
 })
 
 ```
@@ -99,8 +99,8 @@ be present when retrieving the chain.
 ```python
 
 dispatcher.get_or_create_chain([
-	('online_booking', '123456'),
-	('customer', '57844')
+    ('online_booking', '123456'),
+    ('customer', '57844')
 ])
 
 ```
@@ -112,7 +112,7 @@ takes the transition passed in and any callback arguments specified.
 ```python
 
 def some_callback(transition, **callback_args):
-	# so something magical
+    # so something magical
 
 
 dispatcher.execute_chain(callback=some_callback, callback_args={})
