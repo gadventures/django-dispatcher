@@ -111,32 +111,51 @@ class Dispatcher:
 
     def execute_chain(self, dry_run=False, callback=None, callback_kwargs=None, **kwargs):
 
+        if self.chain.is_locked:
+            logger.warning('Chain is locked, exiting early')
+            return
+
+        self.chain.is_locked = True
+        self.chain.save()
         try:
             transition = self.find_transition()
         except Exception as e:
             logger.warning(e)
-            return False
+            self.chain.is_locked = False
+            self.chain.save()
+            return
+
         else:
             transition = self.find_transition()
 
         try:
             if dry_run:
+                logger.info('Dry run found, exiting without executing/transitioning')
                 pass
+
             elif callback:
                 cb_kwargs = callback_kwargs or {}
+                logger.debug('Callback found, executing with %s', cb_kwargs)
                 callback(transition, **cb_kwargs)
+
             elif self.API_OPTS:
+                logger.debug('API settings found, doing api request')
                 self.send_api_request(transition)
+
             else:
-                raise ValueError('Nothing is configured to send anywhere.')
+                logger.warning('Nothing configured to happen during execution')
+
         except Exception as e:
-            logger.error('Error executing chain: %s', e.message)
+            logger.exception('Error executing chain: %s', e.message)
+
         else:
             logger.info('Transitioning to %s', transition)
             if not dry_run:
                 self.chain.state = transition.final_state
-                self.chain.save()
                 self.log_event(
                     action='state_transition',
                     value=self.chain.state
                 )
+
+        self.chain.is_locked = False
+        self.chain.save()
