@@ -76,19 +76,14 @@ DISPATCHER_CONFIG = {
 
 3. Initialize the dispatcher with the above settings. You'll have to
 determine the `chain_type` on your own. Its name must be the same as
-the above config. We include the `requests_by` to keep track of where
-the request originates from.
+the above config.
 
 
 ```python
 
 from dispatcher import Dispatcher
 
-dispatcher = Dispatcher(
-    chain_type='abandoned_cart',
-    chain_configs=DISPATCHER_CONFIG,
-    requests_by='cart_abandonment_scripts'
-})
+dispatcher = Dispatcher(DISPATCHER_CONFIG)
 
 ```
 
@@ -98,10 +93,13 @@ be present when retrieving the chain.
 
 ```python
 
-dispatcher.get_or_create_chain([
-    ('online_booking', '123456'),
-    ('customer', '57844')
-])
+chain = dispatcher.get_or_create_chain(
+    chain_type='chain_type',
+    rsc_mappings=[
+        ('online_booking', '123456'),
+        ('customer', '57844')
+    ]
+)
 
 ```
 
@@ -113,8 +111,10 @@ takes the transition passed in and any callback arguments specified.
 
 def some_callback(transition, **callback_args):
     # so something magical
+    # the transition will contain a `transition.build_context`, which will
+    # return the stuff to pass to the callback
 
 
-dispatcher.execute_chain(callback=some_callback, callback_args={})
+chain.execute(callback=some_callback, callback_args={})
 
 ```

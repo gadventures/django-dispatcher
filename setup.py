@@ -10,6 +10,7 @@ history = open('HISTORY.md').read().replace('.. :changelog:', '')
 requirements = [
     'requests',
     'future',
+    'django',
 ]
 
 test_requirements = [

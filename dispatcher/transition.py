@@ -7,7 +7,7 @@ class Transition:
         self.chain = chain
         self.resources = dict([
             (rsc.resource_type, rsc.resource_id)
-            for rsc in chain.chain_resources.all()
+            for rsc in chain.resources.all()
         ])
 
     def __repr__(self):
