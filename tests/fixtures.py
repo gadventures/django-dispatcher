@@ -23,18 +23,3 @@ class T3(BaseTransition):
 
 class T4(BaseTransition):
     final_state = 't4_done'
-
-
-DISPATCHER_CONFIG = {
-    'chains': [
-        {
-            'chain_type': 'sample_chain',
-            'transitions': {
-                NEW: [T1, T2],
-                T1.final_state: [T3],
-                T3.final_state: [T4],
-                T2.final_state: [T4],
-            }
-        }
-    ]
-}
