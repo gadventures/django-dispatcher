@@ -3,7 +3,7 @@ from dispatcher import Transition
 NEW = 'new'
 
 class BaseTransition(Transition):
-    def is_valid(self):
+    def is_valid(self, data):
         return True
 
     def build_context(self):

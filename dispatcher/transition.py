@@ -24,10 +24,7 @@ class Transition:
 
     @property
     def final_state(self):
-        raise NotImplemented
-
-    def build_context(self):
-        raise NotImplemented
+        return NotImplemented
 
     def is_valid(self):
-        raise NotImplemented
+        return NotImplemented

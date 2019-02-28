@@ -70,8 +70,8 @@ class TransitionTest(TestCase):
         when a transition is validated (they always validate at this point)
         """
         # reinitialize where T1 never validates and always skips to T2
-        T1.is_valid = lambda x: False
-        T2.is_valid = lambda x: True
+        T1.is_valid = lambda x, d: False
+        T2.is_valid = lambda x, d: True
         dispatcher_config['chains'][0]['transitions'] = {
             NEW: [T1, T2],
             T1.final_state: [T3],
@@ -117,8 +117,8 @@ class TransitionTest(TestCase):
         when a transition is validated (they always validate at this point)
         """
         # reinitialize where T1 never validates and always skips to T2
-        T1.is_valid = lambda x: False
-        T2.is_valid = lambda x: False
+        T1.is_valid = lambda x, d: False
+        T2.is_valid = lambda x, d: False
         dispatcher_config['chains'][0]['transitions'] = {
             NEW: [T1, T2],
             T1.final_state: [T3],

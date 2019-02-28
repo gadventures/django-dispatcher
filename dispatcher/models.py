@@ -54,12 +54,11 @@ class Chain(models.Model):
         })
         event_log.save()
 
-    def find_transition(self):
+    def find_transition(self, data):
         errors = []
         for transition in self.transitions[self.state]:
             transition = transition(chain=self)
-            if transition.is_valid():
-                transition.context = transition.build_context()
+            if transition.is_valid(data):
                 return transition
             else:
                 errors += transition.errors
@@ -74,24 +73,27 @@ class Chain(models.Model):
         callback = kwargs.pop('callback', None)
         callback_kwargs = kwargs.pop('callback_kwargs', None)
         requested_by = kwargs.pop('requested_by', None)
+        request_data = kwargs.pop('request_data', None)
 
         self.is_locked = True
         self.save()
         try:
-            transition = self.find_transition()
+            transition = self.find_transition(request_data)
         except Exception as e:
             logger.warning(e)
             self.is_locked = False
             self.save()
             return
 
-        else:
-            transition = self.find_transition()
-
         try:
             if dry_run:
                 logger.info('Dry run found, exiting without executing/transitioning')
                 pass
+
+            elif getattr(transition, 'callback', None):
+                cb_kwargs = callback_kwargs or {}
+                logger.debug('Callback found on transition, executing with %s', cb_kwargs)
+                transition.callback(**cb_kwargs)
 
             elif callback:
                 cb_kwargs = callback_kwargs or {}
