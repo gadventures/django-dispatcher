@@ -3,12 +3,9 @@ class Transition:
     errors = []
     chain = None
 
-    def __init__(self, chain):
+    def __init__(self, chain, request_data):
         self.chain = chain
-        self.resources = dict([
-            (rsc.resource_type, rsc.resource_id)
-            for rsc in chain.resources.all()
-        ])
+        self.context = request_data
 
     def __str__(self):
         return '<{}: {}>'.format(

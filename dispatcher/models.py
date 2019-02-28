@@ -54,11 +54,11 @@ class Chain(models.Model):
         })
         event_log.save()
 
-    def find_transition(self, data):
+    def find_transition(self, request_data):
         errors = []
         for transition in self.transitions[self.state]:
-            transition = transition(chain=self)
-            if transition.is_valid(data):
+            transition = transition(self, request_data)
+            if transition.is_valid():
                 return transition
             else:
                 errors += transition.errors
@@ -119,3 +119,5 @@ class Chain(models.Model):
 
         self.is_locked = False
         self.save()
+
+        return transition
