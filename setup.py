@@ -21,8 +21,8 @@ test_requirements = [
 
 setup(
     name='django-dispatcher',
-    version='0.2.1',
-    description='Python client for the G Adventures REST API',
+    version='0.2.2',
+    description='Django logic engine (used for email logic)',
     long_description=readme + '\n\n' + history,
     author='G Adventures',
     author_email='software@gadventures.com',
