@@ -21,7 +21,7 @@ test_requirements = [
 
 setup(
     name='django-dispatcher',
-    version='0.2.0',
+    version='0.2.1',
     description='Python client for the G Adventures REST API',
     long_description=readme + '\n\n' + history,
     author='G Adventures',
