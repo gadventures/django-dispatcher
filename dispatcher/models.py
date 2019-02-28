@@ -60,32 +60,6 @@ class Chain(models.Model):
     def transitions(self, value):
         self._transitions = value
 
-    def log_event(self, action, value, requested_by):
-        event_log = ChainEvent(**{
-            'chain': self,
-            'action': action,
-            'value': value,
-            'requested_by': requested_by,
-        })
-        event_log.save()
-
-    def find_transition(self, initial_context):
-        if self.state == DONE:
-            # find the transition with final_state = DONE
-            T = next((
-                t for sublist in self.transitions.values()
-                for t in sublist
-                if t.final_state == DONE
-            ), None)
-            return T(self, initial_context)
-
-        for Transition in self.transitions.get(self.state) or []:
-            transition = Transition(self, initial_context)
-            if transition.is_valid():
-                return transition
-            else:
-                self.errors.update({str(transition): transition.errors})
-
     def run_results(self, transition):
         self.unlock()
         return {
@@ -98,6 +72,36 @@ class Chain(models.Model):
             },
         }
 
+    def log_event(self, action, value, requested_by):
+        event_log = ChainEvent(**{
+            'chain': self,
+            'action': action,
+            'value': value,
+            'requested_by': requested_by,
+        })
+        event_log.save()
+
+    def find_transition(self, initial_context):
+        """
+        Find all the possible transitions and validate
+        """
+        if self.state == DONE:
+            # find the transition with final_state = DONE
+            return next((
+                T(self, initial_context)
+                for sublist in self.transitions.values()
+                for T in sublist
+                if T.final_state == DONE
+            ), None)
+
+        for Transition in self.transitions.get(self.state) or []:
+            transition = Transition(self, initial_context)
+            if transition.is_valid():
+                return transition
+            else:
+                # why did it not transition
+                self.errors.update({str(transition): transition.errors})
+
     def execute(self, **kwargs):
 
         # determine whether to actually transition and execute callback
@@ -108,12 +112,13 @@ class Chain(models.Model):
         requested_by = kwargs.pop('requested_by', None)
         initial_context = kwargs.pop('initial_context', None)
 
+        # this will prevent duplicate runs should any processes take a
+        # long time
         if self.is_locked and not self.dry_run:
             logger.warning('Chain is locked, exiting early')
             raise ValueError('Chain is locked, exiting early')
 
         self.lock()
-
         try:
             transition = self.find_transition(initial_context)
         except Exception as e:
@@ -126,6 +131,9 @@ class Chain(models.Model):
 
         if self.dry_run:
             logger.info('Dry run found, exiting without executing/transitioning')
+            return self.run_results(transition)
+
+        if transition.final_state == DONE:
             return self.run_results(transition)
 
         try:
