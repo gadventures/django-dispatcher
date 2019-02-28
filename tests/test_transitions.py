@@ -35,7 +35,7 @@ class TransitionTest(TestCase):
             ('rsc1', '123'),
             ('rsc2', '456'),
         ]
-        chain = dispatcher.get_or_create_chain('sample_chain', rsc_map)
+        chain = dispatcher.get_or_create_chain_from_resources('sample_chain', rsc_map)
         self.assertEqual(chain.state, NEW)
 
         # State is NEW, should transition to the first available transition
@@ -70,8 +70,8 @@ class TransitionTest(TestCase):
         when a transition is validated (they always validate at this point)
         """
         # reinitialize where T1 never validates and always skips to T2
-        T1.is_valid = lambda x, d: False
-        T2.is_valid = lambda x, d: True
+        T1.is_valid = lambda x: False
+        T2.is_valid = lambda x: True
         dispatcher_config['chains'][0]['transitions'] = {
             NEW: [T1, T2],
             T1.final_state: [T3],
@@ -83,7 +83,7 @@ class TransitionTest(TestCase):
             ('rsc1', '123'),
             ('rsc2', '456'),
         ]
-        chain = dispatcher.get_or_create_chain('sample_chain', rsc_map)
+        chain = dispatcher.get_or_create_chain_from_resources('sample_chain', rsc_map)
         self.assertEqual(chain.state, NEW)
 
         # State is NEW, should transition to the first available transition,
@@ -117,8 +117,8 @@ class TransitionTest(TestCase):
         when a transition is validated (they always validate at this point)
         """
         # reinitialize where T1 never validates and always skips to T2
-        T1.is_valid = lambda x, d: False
-        T2.is_valid = lambda x, d: False
+        T1.is_valid = lambda x: False
+        T2.is_valid = lambda x: False
         dispatcher_config['chains'][0]['transitions'] = {
             NEW: [T1, T2],
             T1.final_state: [T3],
@@ -130,7 +130,7 @@ class TransitionTest(TestCase):
             ('rsc1', '123'),
             ('rsc2', '456'),
         ]
-        chain = dispatcher.get_or_create_chain('sample_chain', rsc_map)
+        chain = dispatcher.get_or_create_chain_from_resources('sample_chain', rsc_map)
         self.assertEqual(chain.state, NEW)
 
         # State is NEW, should transition to the first available transition,

@@ -19,7 +19,7 @@ class Migration(migrations.Migration):
                 ('date_created', models.DateField(auto_now_add=True)),
                 ('date_modified', models.DateField(auto_now=True)),
                 ('date_next_update', models.DateField(auto_now=True)),
-                ('disabled', models.NullBooleanField()),
+                ('disabled', models.BooleanField(default=False)),
                 ('is_locked', models.BooleanField(default=False)),
             ],
         ),

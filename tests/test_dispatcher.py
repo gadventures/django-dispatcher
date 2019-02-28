@@ -24,12 +24,12 @@ class DispatcherTest(TestCase):
             ('rsc1', '123'),
             ('rsc2', '456'),
         ]
-        chain1 = dispatcher.get_or_create_chain('sample_chain', rsc_map)
+        chain1 = dispatcher.get_or_create_chain_from_resources('sample_chain', rsc_map)
         self.assertEqual(len(chain1.resources.all()), 2)
 
-        chain2 = dispatcher.get_or_create_chain('sample_chain', rsc_map)
+        chain2 = dispatcher.get_or_create_chain_from_resources('sample_chain', rsc_map)
         self.assertEqual(chain1, chain2)
 
         rsc_map.append(('rsc3', '789'))
-        chain3 = dispatcher.get_or_create_chain('sample_chain', rsc_map)
+        chain3 = dispatcher.get_or_create_chain_from_resources('sample_chain', rsc_map)
         self.assertEqual(chain1, chain3)

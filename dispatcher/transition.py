@@ -1,16 +1,16 @@
 class Transition:
 
-    errors = []
     chain = None
+
+    _errors = None
 
     def __init__(self, chain, request_data):
         self.chain = chain
         self.context = request_data
 
     def __str__(self):
-        return '<{}: {}>'.format(
+        return '<{}>'.format(
             self.__class__.__name__,
-            self.final_state
         )
 
     def __repr__(self):
@@ -20,8 +20,21 @@ class Transition:
         )
 
     @property
+    def errors(self):
+        if self._errors is None:
+            self._errors = []
+        return self._errors
+
+    @property
     def final_state(self):
-        return NotImplemented
+        raise NotImplementedError('Transition has no `final_state` attr')
 
     def is_valid(self):
-        return NotImplemented
+        raise NotImplementedError('%s has no `is_valid` function' % self)
+
+    def to_dict(self):
+        return {
+            'errors': self.errors,
+            'context': self.context,
+            'final_state': self.final_state,
+        }

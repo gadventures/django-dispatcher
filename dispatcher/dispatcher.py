@@ -13,7 +13,7 @@ class Dispatcher:
     def __init__(self, chain_configs):
         self.configs = chain_configs
 
-    def get_or_create_chain(self, chain_type, resource_mappings):
+    def get_or_create_chain_from_resources(self, chain_type, resource_mappings):
         """
         Args:
             resource_mappings: list of resource_type, resource_id

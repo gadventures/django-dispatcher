@@ -1,6 +1,8 @@
 import logging
 from django.db import models
 
+from constants import DONE
+
 logger = logging.getLogger()
 
 
@@ -27,8 +29,21 @@ class Chain(models.Model):
     date_created = models.DateField(auto_now_add=True)
     date_modified = models.DateField(auto_now=True)
     date_next_update = models.DateField(auto_now=True)
-    disabled = models.NullBooleanField()
+    disabled = models.BooleanField(default=False)
     is_locked = models.BooleanField(default=False)
+
+    dry_run = False
+    errors = {}
+
+    def lock(self):
+        if self.is_locked is False and not self.dry_run:
+            self.is_locked = True
+            self.save()
+
+    def unlock(self):
+        if self.is_locked and not self.dry_run:
+            self.is_locked = False
+            self.save()
 
     def transition_to(self, new_state):
         self.state = new_state
@@ -37,7 +52,7 @@ class Chain(models.Model):
     @property
     def transitions(self):
         if not self._transitions:
-            return NotImplemented
+            raise NotImplementedError('Could not find transitions on chain')
         return self._transitions
     _transitions = None
 
@@ -54,43 +69,67 @@ class Chain(models.Model):
         })
         event_log.save()
 
-    def find_transition(self, request_data):
-        errors = []
-        for transition in self.transitions[self.state]:
-            transition = transition(self, request_data)
+    def find_transition(self, initial_context):
+        if self.state == DONE:
+            # find the transition with final_state = DONE
+            T = next((
+                t for sublist in self.transitions.values()
+                for t in sublist
+                if t.final_state == DONE
+            ), None)
+            return T(self, initial_context)
+
+        for Transition in self.transitions.get(self.state) or []:
+            transition = Transition(self, initial_context)
             if transition.is_valid():
                 return transition
             else:
-                errors += transition.errors
-        raise ValueError('No valid transitions found.\n %s' % '\n'.join(errors))
+                self.errors.update({str(transition): transition.errors})
+
+    def run_results(self, transition):
+        self.unlock()
+        return {
+            'errors': self.errors,
+            'dry_run': self.dry_run,
+            'transition': transition and transition.to_dict(),
+            'chain': {
+                'id': self.pk,
+                'state': self.state,
+            },
+        }
 
     def execute(self, **kwargs):
-        if self.is_locked:
-            logger.warning('Chain is locked, exiting early')
-            return
 
-        dry_run = kwargs.pop('dry_run', False)
+        # determine whether to actually transition and execute callback
+        self.dry_run = kwargs.pop('dry_run', False)
+
         callback = kwargs.pop('callback', None)
         callback_kwargs = kwargs.pop('callback_kwargs', None)
         requested_by = kwargs.pop('requested_by', None)
-        request_data = kwargs.pop('request_data', None)
+        initial_context = kwargs.pop('initial_context', None)
 
-        self.is_locked = True
-        self.save()
+        if self.is_locked and not self.dry_run:
+            logger.warning('Chain is locked, exiting early')
+            raise ValueError('Chain is locked, exiting early')
+
+        self.lock()
+
         try:
-            transition = self.find_transition(request_data)
+            transition = self.find_transition(initial_context)
         except Exception as e:
-            logger.warning(e)
-            self.is_locked = False
-            self.save()
-            return
+            logger.exception('Error while finding transition: %s', e.message)
+            self.unlock()
+            raise e
+
+        if not transition:
+            return self.run_results(transition)
+
+        if self.dry_run:
+            logger.info('Dry run found, exiting without executing/transitioning')
+            return self.run_results(transition)
 
         try:
-            if dry_run:
-                logger.info('Dry run found, exiting without executing/transitioning')
-                pass
-
-            elif getattr(transition, 'callback', None):
+            if getattr(transition, 'callback', None):
                 cb_kwargs = callback_kwargs or {}
                 logger.debug('Callback found on transition, executing with %s', cb_kwargs)
                 transition.callback(**cb_kwargs)
@@ -103,21 +142,19 @@ class Chain(models.Model):
             else:
                 logger.warning('Nothing configured to happen during execution')
 
+            self.state = transition.final_state
+            self.is_locked = False
+            self.save()
+
+            self.log_event(
+                action='state_transition',
+                value=self.state,
+                requested_by=requested_by,
+            )
+
+            return self.run_results(transition)
+
         except Exception as e:
             logger.exception('Error executing chain: %s', e.message)
-
-        else:
-            if not dry_run:
-                logger.info('Transitioning to %s', transition)
-                self.state = transition.final_state
-                self.save()
-                self.log_event(
-                    action='state_transition',
-                    value=self.state,
-                    requested_by=requested_by,
-                )
-
-        self.is_locked = False
-        self.save()
-
-        return transition
+            self.unlock()
+            raise e
