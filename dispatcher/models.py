@@ -86,7 +86,7 @@ class Chain(models.Model):
         Find all the possible transitions and validate
         """
         if self.state == DONE:
-            # find the transition with final_state = DONE
+            # find the transition with final_state==DONE
             return next((
                 T(self, initial_context)
                 for sublist in self.transitions.values()
