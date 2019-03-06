@@ -21,7 +21,7 @@ test_requirements = [
 
 setup(
     name='django-dispatcher',
-    version='0.2.3',
+    version='0.3.0',
     description='Django logic engine (used for email logic)',
     long_description=readme + '\n\n' + history,
     author='G Adventures',
