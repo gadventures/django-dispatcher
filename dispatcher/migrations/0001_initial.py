@@ -43,4 +43,8 @@ class Migration(migrations.Migration):
                 ('chain', models.ForeignKey(related_name='chain_resources', to='dispatcher.Chain')),
             ],
         ),
+        migrations.AlterUniqueTogether(
+            name='ChainResource',
+            unique_together=(('chain', 'resource_id', 'resource_type'), ),
+        ),
     ]

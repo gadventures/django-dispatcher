@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime
 from django.db import models
 
 from constants import DONE
@@ -20,6 +21,9 @@ class ChainResource(models.Model):
     chain = models.ForeignKey('dispatcher.Chain', related_name='resources')
     resource_id = models.CharField(max_length=30)
     resource_type = models.CharField(max_length=30)
+
+    class Meta:
+        unique_together = (('chain', 'resource_id', 'resource_type'), )
 
 
 class Chain(models.Model):
@@ -117,6 +121,13 @@ class Chain(models.Model):
         if self.is_locked and not self.dry_run:
             logger.warning('Chain is locked, exiting early')
             raise ValueError('Chain is locked, exiting early')
+
+        if self.date_next_update < datetime.today().date():
+            logger.warning(
+                'Chain is not scheduled to update til %s',
+                self.date_next_update
+            )
+            raise ValueError('Chain not scheduled to update yet')
 
         self.lock()
         try:
