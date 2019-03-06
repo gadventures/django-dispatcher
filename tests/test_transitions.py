@@ -35,7 +35,7 @@ class TransitionTest(TestCase):
             ('rsc1', '123'),
             ('rsc2', '456'),
         ]
-        chain = dispatcher.get_or_create_chain_from_resources('sample_chain', rsc_map)
+        chain = dispatcher.get_or_create_resource_chain('sample_chain', rsc_map)
         self.assertEqual(chain.state, NEW)
 
         # State is NEW, should transition to the first available transition
@@ -83,7 +83,7 @@ class TransitionTest(TestCase):
             ('rsc1', '123'),
             ('rsc2', '456'),
         ]
-        chain = dispatcher.get_or_create_chain_from_resources('sample_chain', rsc_map)
+        chain = dispatcher.get_or_create_resource_chain('sample_chain', rsc_map)
         self.assertEqual(chain.state, NEW)
 
         # State is NEW, should transition to the first available transition,
@@ -130,7 +130,7 @@ class TransitionTest(TestCase):
             ('rsc1', '123'),
             ('rsc2', '456'),
         ]
-        chain = dispatcher.get_or_create_chain_from_resources('sample_chain', rsc_map)
+        chain = dispatcher.get_or_create_resource_chain('sample_chain', rsc_map)
         self.assertEqual(chain.state, NEW)
 
         # State is NEW, should transition to the first available transition,
