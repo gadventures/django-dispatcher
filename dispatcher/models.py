@@ -32,7 +32,7 @@ class Chain(models.Model):
     chain_type = models.CharField(max_length=30)
     date_created = models.DateField(auto_now_add=True)
     date_modified = models.DateField(auto_now=True)
-    date_next_update = models.DateField(auto_now=True)
+    date_next_update = models.DateField(auto_now_add=True)
     disabled = models.BooleanField(default=False)
     is_locked = models.BooleanField(default=False)
 
@@ -94,8 +94,7 @@ class Chain(models.Model):
             return next((
                 T(self, initial_context)
                 for sublist in self.transitions.values()
-                for T in sublist
-                if T.final_state == DONE
+                for T in sublist if T.final_state == DONE
             ), None)
 
         for Transition in self.transitions.get(self.state) or []:
@@ -122,7 +121,7 @@ class Chain(models.Model):
             logger.warning('Chain is locked, exiting early')
             raise ValueError('Chain is locked, exiting early')
 
-        if self.date_next_update < datetime.today().date():
+        if self.date_next_update > datetime.today().date():
             logger.warning(
                 'Chain is not scheduled to update til %s',
                 self.date_next_update
@@ -160,6 +159,9 @@ class Chain(models.Model):
 
             else:
                 logger.warning('Nothing configured to happen during execution')
+
+            if getattr(transition, 'date_next_update', None):
+                self.date_next_update = transition.date_next_update
 
             self.state = transition.final_state
             self.is_locked = False

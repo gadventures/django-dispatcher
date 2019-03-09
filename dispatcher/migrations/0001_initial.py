@@ -18,7 +18,7 @@ class Migration(migrations.Migration):
                 ('chain_type', models.CharField(max_length=30)),
                 ('date_created', models.DateField(auto_now_add=True)),
                 ('date_modified', models.DateField(auto_now=True)),
-                ('date_next_update', models.DateField(auto_now=True)),
+                ('date_next_update', models.DateField(auto_now_add=True)),
                 ('disabled', models.BooleanField(default=False)),
                 ('is_locked', models.BooleanField(default=False)),
             ],
