@@ -22,7 +22,7 @@ class Dispatcher:
             if not (isinstance(r_id, str) or isinstance(r_id, unicode)):
                 raise ValueError('Invalid resource_id. Use str')
 
-    def get_or_create_resource_chain(self, chain_type, rsc_mappings):
+    def get_or_create_resource_chain(self, chain_type, rsc_mappings, can_be_subset=False):
         """
         Args:
             rsc_mappings: list of resource_type, resource_id
@@ -67,7 +67,14 @@ class Dispatcher:
                 for rsc in chain.resources.all()
             }
             matched = rsc_mapping & set(rsc_mappings)
-            if len(matched) == len(rsc_mappings):
+
+            # compare only exactly the specified resources
+            if can_be_subset is False and len(matched) == len(rsc_mappings):
+                found_chains.append(chain)
+
+            # the resource provided can be a subset, but all the
+            # provided ones have to be present
+            if can_be_subset and len(matched) >= len(rsc_mappings):
                 found_chains.append(chain)
 
         if len(found_chains) > 1:
