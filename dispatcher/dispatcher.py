@@ -48,33 +48,33 @@ class Dispatcher:
         # We want to find a chain that has all the resources
         # present (if more resources, we don't care)
         found_chains = {}
-        for r_type, r_id in rsc_mappings:
-            chain = Chain.objects.filter(
-                resources__resource_type=r_type,
-                resources__resource_id=r_id,
-                chain_type=chain_type,
-            ).first()
+        sql_args = tuple((str(rsc_type), str(rsc_id)) for rsc_type, rsc_id in rsc_mappings)
+        query = """
+        SELECT
+            DISTINCT chain.*
+        FROM
+            dispatcher_chain chain,
+            dispatcher_chainresource rsc
+        WHERE
+            chain.id = rsc.chain_id AND
+            (rsc.resource_type, rsc.resource_id) IN %s
+        """
+        found_chains = []
+        chains = Chain.objects.raw(query % str(sql_args))
+        for chain in chains:
+            rsc_mapping = {
+                (rsc.resource_type, rsc.resource_id)
+                for rsc in chain.resources.all()
+            }
+            matched = rsc_mapping & set(rsc_mappings)
+            if len(matched) == len(rsc_mappings):
+                found_chains.append(chain)
 
-            if not chain:
-                # if a single resource is missing, the chain won't match
-                break
-
-            if chain.id not in found_chains.keys():
-                found_chains[chain.id] = {'count': 1, 'chain': chain}
-            else:
-                found_chains[chain.id]['count'] += 1
-
-        num_rsc = len(rsc_mappings)
-        chains = [
-            c['chain'] for c in found_chains.values()
-            if num_rsc == c['count']
-        ]
-
-        if len(chains) > 1:
+        if len(found_chains) > 1:
             raise ValueError('More than 1 chain found with %s', rsc_mappings)
 
-        elif chains:
-            chain = chains[0]
+        elif found_chains:
+            chain = found_chains[0]
 
         else:
             chain = Chain(

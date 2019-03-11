@@ -144,6 +144,7 @@ class Chain(models.Model):
             return self.run_results(transition)
 
         if transition.final_state == DONE:
+            self.state = transition.final_state
             return self.run_results(transition)
 
         try:
