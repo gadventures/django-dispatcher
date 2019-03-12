@@ -11,8 +11,8 @@ class Dispatcher:
     chain = None
     _config_keys = ('chain_type', 'transitions')
 
-    def __init__(self, chain_configs):
-        self.configs = chain_configs
+    def __init__(self, chain_config):
+        self.config = chain_config
 
     def _clean_rsc_map(self, rsc_map):
         for r_type, r_id in rsc_map:
@@ -25,16 +25,43 @@ class Dispatcher:
     def get_or_create_resource_chain(self, chain_type, rsc_mappings, can_be_subset=False):
         """
         Args:
-            rsc_mappings: list of resource_type, resource_id
+            chain_type: type of chain as listed in `self.config`
+            rsc_mappings: list of resource_type, resource_id tuple combos
                 [
                     (resource_type1, resource_id1),
                     (resource_type1, resource_id2),
                 ]
+            can_be_subset: the matching algorithm
+                Given this rsc map
+
+                 [
+                    (rsc_type1, rsc_id1)
+                 ]
+
+                And these resources:
+
+                [
+                    {
+                        'resource_type': 'rsc_type1',
+                        'resource_id': 'rsc_id1'
+                    },
+                    {
+                        'resource_type': 'rsc_type2',
+                        'resource_id': 'rsc_id2'
+                    }
+                ]
+
+                if can_be_subset = True
+                    the chain will match because chain.resources contains all
+                    the resources passed in the rsc_mappings
+                if can_be_subset = False
+                    the chain will not match because chain.resources contains
+                    resources the rsc_map does not contain
         """
         from .models import Chain, ChainResource
 
         config = next((
-            _config for _config in self.configs.get('chains')
+            _config for _config in self.config.get('chains')
             if _config.get('chain_type') == chain_type
         ), None)
 

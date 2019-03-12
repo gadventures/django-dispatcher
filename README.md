@@ -24,20 +24,16 @@ The required functions/params include:
 
 ```python
 
-from dispatcher import Transition
+from dispatcher import Transition, DONE
 
 
 class Cart2DayReminder(Transition):
 
     final_state = CART_2_DAY_REMINDER_SENT
 
-    @property
-    def onlinebooking(self):
-        return OnlineBooking.objects.get(pk=self.resources['online_booking'])
-
     def is_valid(self):
-
-        if self.onlinebooking.date_updated < (datetime.now() - timedelta(days=2)):
+        onlinebooking = get_online_booking(self.context)
+        if onlinebooking.date_updated < (datetime.now() - timedelta(days=2)):
             self.errors.append('The booking was created less than 2 days ago')
             return False
 
@@ -45,7 +41,8 @@ class Cart2DayReminder(Transition):
 
     def build_context(self):
         return {
-            'booking': self.onlinebooking.to_dict(),
+            'booking': booking,
+            'customer': booking.customer,
         }
 
 
@@ -53,38 +50,48 @@ class Cart1WeekReminder(Transition):
     ...
 
 
+class CartBookingComplete(Transition):
+
+    # DONE is a special state that doesn't transition any further and won't
+    # even attempt to execute a callback. If the chain is in this state, it'll
+    # exit early.
+    final_state = DONE
+
+    def is_valid(self):
+        onlinebooking = get_online_booking(self.context)
+        if onlinebooking.status != 'complete':
+            self.errors.append('Booking is not complete yet')
+            return False
+
+        return True
 ```
 
-2. Create a config, listing the transitions that can happen. When a chain state is found, it can transition to the listed transitions. After that is done, the chain moves to a new state. The next time this runs, it'll find the new state and try to transition to the new transitions.
+2. Create a config, listing the transitions that can happen. When a chain state is
+found, it can transition to the listed transitions. After that is done, the chain
+moves to a new state. The next time this runs, it'll find the new state and try to
+transition to the new transitions.
+
+Initialize the dispatcher with these settings. You'll have to set and determine
+the `chain_type` on your own. Its name must be the same as in the config.
 
 ```python
+from dispatcher import Dispatcher, NEW
+
 DISPATCHER_CONFIG = {
     'chains': [
         {
             'chain_type': 'abandoned_cart',
             'transitions': {
-                NEW: [Cart2DayReminder, Cart1WeekReminder],
-                Cart2DayReminder.final_state: [Cart1WeekReminder, ],
-                Cart1WeekReminder.final_state: [],
+                NEW: [Cart2DayReminder, Cart1WeekReminder, CartBookingComplete],
+                Cart2DayReminder.final_state: [Cart1WeekReminder, CartBookingComplete],
+                Cart1WeekReminder.final_state: [CartBookingComplete],
+                CartBookingComplete.final_state: [],
             }
         }
     ]
 }
 
-```
-
-
-3. Initialize the dispatcher with the above settings. You'll have to
-determine the `chain_type` on your own. Its name must be the same as
-the above config.
-
-
-```python
-
-from dispatcher import Dispatcher
-
 dispatcher = Dispatcher(DISPATCHER_CONFIG)
-
 ```
 
 4. Provide the resources to query searching for a chain. The chain
@@ -93,7 +100,7 @@ be present when retrieving the chain.
 
 ```python
 
-chain = dispatcher.get_or_create_chain(
+chain = dispatcher.get_or_create_resource_chain(
     chain_type='chain_type',
     rsc_mappings=[
         ('online_booking', '123456'),
@@ -115,6 +122,45 @@ def some_callback(transition, **callback_args):
     # return the stuff to pass to the callback
 
 
-chain.execute(callback=some_callback, callback_args={})
+chain.execute(
+    initial_context={'resources': _map},
+    callback=build_all_msgs,
+    dry_run=dry_run,
+)
+```
 
+6. Putting it all together.
+
+```python
+from dispatcher import Dispatcher, NEW
+
+DISPATCHER_CONFIG = {
+    'chains': [
+        {
+            'chain_type': 'abandoned_cart',
+            'transitions': {
+                NEW: [Cart2DayReminder, Cart1WeekReminder, CartBookingComplete],
+                Cart2DayReminder.final_state: [Cart1WeekReminder, CartBookingComplete],
+                Cart1WeekReminder.final_state: [CartBookingComplete],
+                CartBookingComplete.final_state: [],
+            }
+        }
+    ]
+}
+
+def callback(transition):
+    context = transition.build_context()
+    send_email(transition.context)
+
+dispatcher = Dispatcher(DISPATCHER_CONFIG)
+rsc_map = [
+    ('bookings', '12345'),
+]
+
+chain = dispatcher.get_or_create_resource_chain('abandoned_cart', rsc_map)
+chain.execute(
+    initial_context={'resources': rsc_map},
+    callback=callback,
+    dry_run=dry_run,
+)
 ```
