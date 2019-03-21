@@ -9,7 +9,7 @@ logger = logging.getLogger()
 
 class ChainEvent(models.Model):
 
-    chain = models.ForeignKey('dispatcher.Chain', related_name='chain_event')
+    chain = models.ForeignKey('dispatcher.Chain', related_name='events')
     date_created = models.DateField(auto_now_add=True)
     action = models.CharField(max_length=30)
     value = models.CharField(max_length=30)

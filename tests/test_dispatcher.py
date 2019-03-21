@@ -1,10 +1,11 @@
 import mock
 from django.test import TestCase
 from django.conf import settings
-from dispatcher import Dispatcher
+from dispatcher.dispatcher import Dispatcher
 from dispatcher.models import ChainResource
+from dispatcher.constants import NEW, DONE
 from tests.fixtures import (
-    NEW, T1, T2, T3, T4,
+    T1, T2, T3, T4
 )
 
 dispatcher_config = {'chains': [{
@@ -20,7 +21,15 @@ dispatcher_config = {'chains': [{
 class DispatcherTest(TestCase):
 
     def test_get_chain(self):
-        dispatcher = Dispatcher(dispatcher_config)
+
+        dispatcher = Dispatcher({'chains': [{
+            'chain_type': 'sample_chain',
+            'transitions': {
+                NEW: [T1, T2],
+                T1.final_state: [T3],
+                T2.final_state: [T4],
+            }
+        }]})
         rsc_map = [
             ('rsc1', '123'),
             ('rsc2', '456'),

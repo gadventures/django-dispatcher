@@ -1,7 +1,5 @@
 from dispatcher import Transition
 
-NEW = 'new'
-
 class BaseTransition(Transition):
     def is_valid(self):
         return True

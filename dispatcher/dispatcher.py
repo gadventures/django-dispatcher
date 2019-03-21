@@ -14,6 +14,13 @@ class Dispatcher:
     def __init__(self, chain_config):
         self.config = chain_config
 
+    def _get_config(self, chain_type):
+        return next((
+            _config for _config in self.config.get('chains')
+            if _config.get('chain_type') == chain_type
+        ), None)
+
+
     def _clean_rsc_map(self, rsc_map):
         for r_type, r_id in rsc_map:
             if not (isinstance(r_type, str) or isinstance(r_id, unicode)):
@@ -60,10 +67,7 @@ class Dispatcher:
         """
         from .models import Chain, ChainResource
 
-        config = next((
-            _config for _config in self.config.get('chains')
-            if _config.get('chain_type') == chain_type
-        ), None)
+        config = self._get_config(chain_type)
 
         if not config:
             raise ValueError("Couldn't find a configuration for chain_type: %s" % chain_type)
@@ -75,7 +79,6 @@ class Dispatcher:
         # We want to find a chain that has all the resources
         # present (if more resources, we don't care)
         found_chains = {}
-        sql_args = tuple((str(rsc_type), str(rsc_id)) for rsc_type, rsc_id in rsc_mappings)
         query = """
         SELECT
             DISTINCT chain.*
@@ -87,7 +90,16 @@ class Dispatcher:
             (rsc.resource_type, rsc.resource_id) IN %s
         """
         found_chains = []
-        chains = Chain.objects.raw(query % str(sql_args))
+
+        # there's a silly thing where tuples, when singular,
+        # have a trailing ',', stringifying to '((),)', which
+        # is invalid for postgres lookups
+        # it only happens when there's only one argument, but it's
+        # safe to always remove it
+        sql_args = tuple((str(rsc_type), str(rsc_id)) for rsc_type, rsc_id in rsc_mappings)
+        sql_args_str = str(sql_args).replace('),)', '))')
+
+        chains = Chain.objects.raw(query % sql_args_str)
         for chain in chains:
             rsc_mapping = {
                 (rsc.resource_type, rsc.resource_id)
