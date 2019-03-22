@@ -1,6 +1,7 @@
 import mock
 from django.test import TestCase
 from django.conf import settings
+from django.db import IntegrityError, transaction
 from dispatcher.dispatcher import Dispatcher
 from dispatcher.models import ChainResource
 from dispatcher.constants import NEW, DONE
@@ -40,20 +41,38 @@ class DispatcherTest(TestCase):
         chain2 = dispatcher.get_or_create_resource_chain('sample_chain', rsc_map)
         self.assertEqual(chain1, chain2)
 
+        chain2 = dispatcher.get_or_create_resource_chain('sample_chain', rsc_map, can_be_subset=True)
+        self.assertEqual(chain1, chain2)
+
         # if there are more resources on the chain, but only 2 are specified in the
         # rsc_map, ignore the unmentioned resources and do an AND statement on the
         # specified resources
         ChainResource.objects.create(chain=chain2, resource_type='rsc2', resource_id='101')
         chain2 = dispatcher.get_or_create_resource_chain('sample_chain', rsc_map)
-        self.assertEqual(chain1, chain2)
+        self.assertNotEqual(chain1, chain2)
 
         # Add an additional resource lookup. This new lookup should create a new chain
         rsc_map.append(('rsc3', '789'))
         chain3 = dispatcher.get_or_create_resource_chain('sample_chain', rsc_map)
         self.assertNotEqual(chain1, chain3)
 
-        # Since the resource was created on chain1, now the same lookup will work
-        # as it has all three matching resources
-        ChainResource.objects.create(chain=chain1, resource_type='rsc3', resource_id='789')
         chain4 = dispatcher.get_or_create_resource_chain('sample_chain', rsc_map)
-        self.assertEqual(chain1, chain4)
+        self.assertEqual(chain3, chain4)
+
+        chain5 = dispatcher.get_or_create_resource_chain('sample_chain', rsc_map, can_be_subset=True)
+        self.assertEqual(chain3, chain5)
+
+    def test_single_resource(self):
+        dispatcher = Dispatcher({'chains': [{
+            'chain_type': 'sample_chain',
+            'transitions': {
+                NEW: [T1, T2],
+                T1.final_state: [T3],
+                T2.final_state: [T4],
+            }
+        }]})
+        rsc_map = [
+            ('rsc1', '123'),
+        ]
+        chain1 = dispatcher.get_or_create_resource_chain('sample_chain', rsc_map)
+        self.assertEqual(len(chain1.resources.all()), 1)

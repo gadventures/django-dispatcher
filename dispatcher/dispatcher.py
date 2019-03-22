@@ -99,21 +99,24 @@ class Dispatcher:
         sql_args = tuple((str(rsc_type), str(rsc_id)) for rsc_type, rsc_id in rsc_mappings)
         sql_args_str = str(sql_args).replace('),)', '))')
 
+        provided_rsc_set = set(rsc_mappings)
         chains = Chain.objects.raw(query % sql_args_str)
         for chain in chains:
-            rsc_mapping = {
+            chain_rsc_set = {
                 (rsc.resource_type, rsc.resource_id)
                 for rsc in chain.resources.all()
             }
-            matched = rsc_mapping & set(rsc_mappings)
 
             # compare only exactly the specified resources
-            if can_be_subset is False and len(matched) == len(rsc_mappings):
+            print('Resources provided %s | resources found %s', provided_rsc_set, chain_rsc_set)
+            print('Exact match', chain_rsc_set == provided_rsc_set)
+            if can_be_subset is False and chain_rsc_set == provided_rsc_set:
                 found_chains.append(chain)
 
             # the resource provided can be a subset, but all the
             # provided ones have to be present
-            if can_be_subset and len(matched) >= len(rsc_mappings):
+            print('Subset result', not provided_rsc_set - chain_rsc_set)
+            if can_be_subset and not provided_rsc_set - chain_rsc_set:
                 found_chains.append(chain)
 
         if len(found_chains) > 1:

@@ -2,8 +2,8 @@ import mock
 from django.test import TestCase
 from django.conf import settings
 from dispatcher import Dispatcher
+from dispatcher.constants import NEW
 from tests.fixtures import (
-    NEW,
     T1, T2, T3, T4,
 )
 
