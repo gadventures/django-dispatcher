@@ -2,8 +2,11 @@ class Transition:
 
     def __init__(self, chain, initial_context):
         self.chain = chain
-        self.context = initial_context
         self.errors = []
+        self.context = dict(
+            getattr(self, 'initial_context', {}),
+            **initial_context
+        )
 
     def __str__(self):
         return '<{}>'.format(

@@ -11,9 +11,9 @@ class ChainEvent(models.Model):
 
     chain = models.ForeignKey('dispatcher.Chain', related_name='events')
     date_created = models.DateField(auto_now_add=True)
-    action = models.CharField(max_length=30)
-    value = models.CharField(max_length=30)
-    requested_by = models.CharField(max_length=30)
+    action = models.CharField(max_length=100)
+    value = models.CharField(max_length=100)
+    requested_by = models.CharField(max_length=100)
 
 
 class ChainResource(models.Model):
@@ -28,11 +28,11 @@ class ChainResource(models.Model):
 
 class Chain(models.Model):
 
-    state = models.CharField(max_length=30)
-    chain_type = models.CharField(max_length=30)
+    state = models.CharField(max_length=100)
+    chain_type = models.CharField(max_length=100)
     date_created = models.DateField(auto_now_add=True)
     date_modified = models.DateField(auto_now=True)
-    date_next_update = models.DateField(auto_now_add=True)
+    date_next_update = models.DateField(auto_now_add=True, null=True)
     disabled = models.BooleanField(default=False)
     is_locked = models.BooleanField(default=False)
 
@@ -148,7 +148,7 @@ class Chain(models.Model):
             return self.run_results(transition)
 
         try:
-            if getattr(transition, 'callback', None):
+            if hasattr(transition, 'callback'):
                 cb_kwargs = callback_kwargs or {}
                 logger.debug('Callback found on transition, executing with %s', cb_kwargs)
                 transition.callback(**cb_kwargs)

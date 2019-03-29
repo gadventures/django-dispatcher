@@ -14,11 +14,11 @@ class Migration(migrations.Migration):
             name='Chain',
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
-                ('state', models.CharField(max_length=30)),
-                ('chain_type', models.CharField(max_length=30)),
+                ('state', models.CharField(max_length=100)),
+                ('chain_type', models.CharField(max_length=100)),
                 ('date_created', models.DateField(auto_now_add=True)),
                 ('date_modified', models.DateField(auto_now=True)),
-                ('date_next_update', models.DateField(auto_now_add=True)),
+                ('date_next_update', models.DateField(auto_now_add=True, null=True)),
                 ('disabled', models.BooleanField(default=False)),
                 ('is_locked', models.BooleanField(default=False)),
             ],
@@ -28,10 +28,10 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('date_created', models.DateField(auto_now_add=True)),
-                ('action', models.CharField(max_length=30)),
-                ('value', models.CharField(max_length=30)),
+                ('action', models.CharField(max_length=100)),
+                ('value', models.CharField(max_length=100)),
                 ('chain', models.ForeignKey(related_name='chain_event', to='dispatcher.Chain')),
-                ('requested_by', models.CharField(max_length=30, null=True)),
+                ('requested_by', models.CharField(max_length=100, null=True)),
             ],
         ),
         migrations.CreateModel(
