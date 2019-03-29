@@ -1,11 +1,11 @@
 class Transition:
 
-    def __init__(self, chain, initial_context):
+    def __init__(self, chain, initial_context=None):
         self.chain = chain
         self.errors = []
         self.context = dict(
-            getattr(self, 'initial_context', {}),
-            **initial_context
+            initial_context or {},
+            **getattr(self, 'initial_context', {}),
         )
 
     def __str__(self):
