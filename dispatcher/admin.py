@@ -39,13 +39,14 @@ class DateNextUpdateFilter(admin.SimpleListFilter):
 class ChainResourceInline(admin.TabularInline):
     model = ChainResource
     fields = ('resource_type', 'resource_id', )
+    readonly_fields = ('resource_type', 'resource_id', )
     extra = 0
 
 
 class ChainEventInLine(admin.TabularInline):
     model = ChainEvent
     fields = ('action', 'value', 'date_created', 'requested_by')
-    readonly_fields = ('date_created', )
+    readonly_fields = ('date_created', 'action', 'value', 'requested_by')
     extra = 0
 
 class ChainAdmin(admin.ModelAdmin):
@@ -53,7 +54,7 @@ class ChainAdmin(admin.ModelAdmin):
     list_filter = (DateNextUpdateFilter, 'chain_type', 'state')
     ordering = ('date_modified', )
 
-    search_fields = ['messagechainitem__resource_id']
+    search_fields = ['resources__resource_id']
 
     inlines = [
         ChainResourceInline,
