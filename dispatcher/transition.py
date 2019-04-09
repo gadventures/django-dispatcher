@@ -5,7 +5,7 @@ class Transition:
         self.errors = []
         self.context = dict(
             initial_context or {},
-            **getattr(self, 'initial_context', {}),
+            **getattr(self, 'initial_context', {})
         )
 
     def __str__(self):
