@@ -130,10 +130,10 @@ class Chain(models.Model):
         self.lock()
         try:
             transition = self.find_transition(initial_context)
-        except e:
-            logging.exception('Error while finding transition: %s', e.message)
+        except:
+            logging.exception('Error while finding transition: %s', traceback.format_exc())
             self.unlock()
-            raise e
+            raise Exception(traceback.format_exc())
 
         if not transition:
             return self.run_results(transition)
@@ -175,7 +175,7 @@ class Chain(models.Model):
 
             return self.run_results(transition)
 
-        except e:
-            logging.exception('Error executing chain: %s', e.message)
+        except:
+            logging.exception('Error executing chain: %s', traceback.format_exc())
             self.unlock()
-            raise e
+            raise Exception(traceback.format_exc())
