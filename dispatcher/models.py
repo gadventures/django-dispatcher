@@ -1,10 +1,9 @@
+import traceback
 import logging
 from datetime import datetime
 from django.db import models
 
 from constants import DONE
-
-logger = logging.getLogger()
 
 
 class ChainEvent(models.Model):
@@ -118,11 +117,11 @@ class Chain(models.Model):
         # this will prevent duplicate runs should any processes take a
         # long time
         if self.is_locked and not self.dry_run:
-            logger.warning('Chain is locked, exiting early')
+            logging.warning('Chain is locked, exiting early')
             raise ValueError('Chain is locked, exiting early')
 
         if self.date_next_update > datetime.today().date():
-            logger.warning(
+            logging.warning(
                 'Chain is not scheduled to update til %s',
                 self.date_next_update
             )
@@ -131,8 +130,8 @@ class Chain(models.Model):
         self.lock()
         try:
             transition = self.find_transition(initial_context)
-        except Exception as e:
-            logger.exception('Error while finding transition: %s', e.message)
+        except e:
+            logging.exception('Error while finding transition: %s', e.message)
             self.unlock()
             raise e
 
@@ -140,7 +139,7 @@ class Chain(models.Model):
             return self.run_results(transition)
 
         if self.dry_run:
-            logger.info('Dry run found, exiting without executing/transitioning')
+            logging.info('Dry run found, exiting without executing/transitioning')
             return self.run_results(transition)
 
         if transition.final_state == DONE:
@@ -150,16 +149,16 @@ class Chain(models.Model):
         try:
             if hasattr(transition, 'callback'):
                 cb_kwargs = callback_kwargs or {}
-                logger.debug('Callback found on transition, executing with %s', cb_kwargs)
+                logging.debug('Callback found on transition, executing with %s', cb_kwargs)
                 transition.callback(**cb_kwargs)
 
             elif callback:
                 cb_kwargs = callback_kwargs or {}
-                logger.debug('Callback found, executing with %s', cb_kwargs)
+                logging.debug('Callback found, executing with %s', cb_kwargs)
                 callback(transition, **cb_kwargs)
 
             else:
-                logger.warning('Nothing configured to happen during execution')
+                logging.warning('Nothing configured to happen during execution')
 
             if getattr(transition, 'date_next_update', None):
                 self.date_next_update = transition.date_next_update
@@ -176,7 +175,7 @@ class Chain(models.Model):
 
             return self.run_results(transition)
 
-        except Exception as e:
-            logger.exception('Error executing chain: %s', e.message)
+        except e:
+            logging.exception('Error executing chain: %s', e.message)
             self.unlock()
             raise e
