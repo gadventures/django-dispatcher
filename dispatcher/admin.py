@@ -52,7 +52,7 @@ class ChainEventInLine(admin.TabularInline):
 class ChainAdmin(admin.ModelAdmin):
     list_display = ('state', 'chain_type', 'disabled', 'date_created', 'date_modified', 'date_next_update')
     list_filter = (DateNextUpdateFilter, 'chain_type', 'state')
-    ordering = ('date_modified', )
+    ordering = ('-date_modified', )
 
     search_fields = ['resources__resource_id']
 
