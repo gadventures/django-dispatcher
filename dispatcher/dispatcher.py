@@ -107,13 +107,13 @@ class Dispatcher:
 
             # compare only exactly the specified resources
             logging.info('Resources provided %s | resources found %s', provided_rsc_set, chain_rsc_set)
-            logging.info('Exact match', chain_rsc_set == provided_rsc_set)
+            logging.info('Exact match %s', chain_rsc_set == provided_rsc_set)
             if can_be_subset is False and chain_rsc_set == provided_rsc_set:
                 found_chains.append(chain)
 
             # the resource provided can be a subset, but all the
             # provided ones have to be present
-            logging.info('Subset result', not provided_rsc_set - chain_rsc_set)
+            logging.info('Subset result %s', not provided_rsc_set - chain_rsc_set)
             if can_be_subset and not provided_rsc_set - chain_rsc_set:
                 found_chains.append(chain)
 
